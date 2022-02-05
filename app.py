@@ -1,28 +1,35 @@
 #!/usr/bin/env python3
-import os
 
-import aws_cdk as cdk
-
-from mycdk2.mycdk2_stack import Mycdk2Stack
+from aws_cdk import App, Stack, aws_lambda
+from constructs import Construct
 
 
-app = cdk.App()
-Mycdk2Stack(app, "Mycdk2Stack",
-    # If you don't specify 'env', this stack will be environment-agnostic.
-    # Account/Region-dependent features and context lookups will not work,
-    # but a single synthesized template can be deployed anywhere.
+class MyStack2(Stack):
 
-    # Uncomment the next line to specialize this stack for the AWS Account
-    # and Region that are implied by the current CLI configuration.
+    def __init__(self, scope: Construct) -> None:
+        
+        construct_id: str = "MyStack2"
+        super().__init__(scope, construct_id)
 
-    #env=cdk.Environment(account=os.getenv('CDK_DEFAULT_ACCOUNT'), region=os.getenv('CDK_DEFAULT_REGION')),
+        layer1_arn = self.format_arn(
+            service="lambda",
+            resource="layer:global-my-lambda-layer-1:1"
+        )
+        
+        layer1 = aws_lambda.LayerVersion.from_layer_version_arn(
+            self,
+            "GlobalMyLayer1",
+            layer1_arn
+        )
 
-    # Uncomment the next line if you know exactly what Account and Region you
-    # want to deploy the stack to. */
+        aws_lambda.Function(self, "MyFunction2",
+            runtime=aws_lambda.Runtime.PYTHON_3_9,
+            handler="index.handler",
+            code=aws_lambda.Code.from_asset("code_lambda"),
+            layers=[layer1]
+        )
 
-    #env=cdk.Environment(account='123456789012', region='us-east-1'),
 
-    # For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html
-    )
-
+app = App()
+MyStack2(app)
 app.synth()
